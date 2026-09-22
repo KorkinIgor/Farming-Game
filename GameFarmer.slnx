@@ -1,0 +1,7 @@
+<Solution>
+  <Configurations>
+    <Platform Name="x64" />
+    <Platform Name="x86" />
+  </Configurations>
+  <Project Path="GameFarmer.vcxproj" Id="a1649ae3-d135-4669-9a0e-208b4028613a" />
+</Solution>
