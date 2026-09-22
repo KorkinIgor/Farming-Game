@@ -17,3 +17,10 @@ Release/
 *.ilk
 *.exp
 *.lib
+
+# Файлы проекта Visual Studio (не нужны в репозитории)
+*.slnx
+*.sln
+*.vcxproj
+*.vcxproj.filters
+*.vcxproj.user
