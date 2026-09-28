@@ -57,7 +57,7 @@ int main() {
 				int slot_index;
 				int item_index_num;
 				if ((check_for_int(scanf_s("%d", &slot_index)) == false) and check_for_int(scanf_s("%d", &item_index_num)) == false) {
-					if ((slot_index < 10 and slot_index >= 0) and (item_index < 10 and item_index_num >= 0)) {
+					if ((slot_index < 10 and slot_index >= 0) and (item_index_num < 10 and item_index_num >= 0)) {
 						inventory[slot_index] = item_index_num;
 					}
 					else {
