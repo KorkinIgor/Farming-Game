@@ -1,16 +1,52 @@
-﻿#include <stdio.h>
+﻿#define _CRT_SECURE_NO_WARNINGS
+#include <stdio.h>
 #include <locale.h>
 #include <iostream>
 #include <map>
-
+#include <windows.h>
+#include <fstream>
+#include <string>
+#include <cstring>
+#include <cstdio>    
+#include <sstream>    
 
 int is_game = 1;
 int current_day = 1;
 int current_hour = 8;
 int inventory[10] = { 1, 2, 2, 2, 3, 3, 4, 6, 0, 0 };
-const char* index_item_array[] = { "пусто", "дерево", "камень", "семена", "ножницы", "сено", "мотыга", "золото", "железо", "навоз" };
+const char* item_names_defualt[] = { "пусто", "дерево", "камень", "семена", "ножницы", "сено", "мотыга", "золото", "железо", "навоз" };
+char index_item_array[10][64];
+char name_user[33];
 
+void record_file() {
+	std::ifstream file("items.txt");
+	if (!file.is_open()) {
+		printf("Файл items.txt не найден!\n");
+		printf("Загружены стандартные названия предметов.\n");
+		for (int i = 0; i < 10; ++i) {
+			strncpy(index_item_array[i], item_names_defualt[i], 63);
+			index_item_array[i][63] = '\0';
+		}
+	}
+	std::string line;
+	int loaded = 0;
+	while (std::getline(file, line)) {
+		std::istringstream iss(line);
+		int id;
+		std::string name;
 
+		// Парсим строку "0 Пусто" → id = 0, name = "Пусто"
+		if (iss >> id >> name) {
+			if (id >= 0 && id < 10) {
+				// Копируем name (std::string) в char-массив
+				strncpy(index_item_array[id], name.c_str(), 63);
+				index_item_array[id][63] = '\0';
+				++loaded;
+			}
+		}
+	}
+	file.close();
+}
 void menu_entry() {
 	printf("\nВыберите команду(0-6):\n");
 	printf("0 - выйти из игры\n");
@@ -22,7 +58,7 @@ void menu_entry() {
 	printf("6 - кол-во уникальных предметов\n");
 }
 
-void check(int count) {
+void cell_cleaning() {
 	printf("Введите корректное значение \n");
 	while (getchar() != '\n');
 }
@@ -48,7 +84,7 @@ void work() {
 	}
 	else
 	{
-		check(input_result);
+		cell_cleaning();
 	}
 }
 
@@ -76,11 +112,11 @@ void change_item() {
 			}
 		}
 		else {
-			check(input_result2);
+			cell_cleaning();
 		}
 	}
 	else {
-		check(input_result1);
+		cell_cleaning();
 	}
 }
 
@@ -97,7 +133,7 @@ void clear_cell() {
 		}
 	}
 	else {
-		check(input_result);
+		cell_cleaning();
 	}
 }
 void search_unique_items() {
@@ -132,9 +168,31 @@ void search_unique_items() {
 }
 
 
+void inputFarmerName() {
+	setlocale(LC_ALL, "Russian");
+	printf("Укажите имя вашего фермера \n");
+	fgets(name_user, sizeof(name_user), stdin);
+	size_t size_name = strlen(name_user);
+	if (size_name > 0 and name_user[size_name - 1] == '\n'){
+		printf("Привет! %s", name_user);
+	}
+	else {
+		printf("Вы указали неправильное имя фермера \n");
+		cell_cleaning();
+		inputFarmerName();
+	}
+
+}
 
 int main() {
 	setlocale(LC_ALL, "Russian");
+	SetConsoleCP(1251);
+	SetConsoleOutputCP(1251);
+	record_file();
+	inputFarmerName();
+	for (int i = 0; i < 10; ++i) {
+		printf("%s \n", index_item_array[i]);
+	}
 	while (is_game) {
 		menu_entry();
 		std::map<int, void(*)()> actions = {
@@ -148,7 +206,7 @@ int main() {
 			it->second();
 		else {
 			if (input_result == 0 or menu_operation > 6){
-				check(input_result);
+				cell_cleaning();
 			}
 		}
 	}
