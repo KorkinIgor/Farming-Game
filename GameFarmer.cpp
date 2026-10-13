@@ -51,6 +51,42 @@ void record_file() {
 	file.close();
 }
 
+void parser() {
+	std::ifstream file("input.txt");
+	if (!file.is_open()) {
+		printf("не удалось открыть файл \n");
+	}
+	else {
+		std::string line;
+		int parsed_count = 0;
+		int skipped_count = 0;
+		while (std::getline(file, line)) {
+			if (line.empty() or line[0] == '#') {
+				skipped_count++;
+				continue;
+			}
+			size_t separator = line.find('=');
+			if (separator == std::string::npos) {
+				skipped_count++;
+				continue;
+			}
+			std::string key = line.substr(0, separator);
+			std::string value = line.substr(separator + 1);
+			if (key.empty() or value.empty()) {
+				skipped_count++;
+				continue;
+			}
+			std::cout << "" << key << ":" << value << "\n";
+			std::ofstream file("output.txt", std::ios::app);
+			file << "" << key << ":" << value << "\n";
+			file.close();
+			parsed_count++;
+		}
+		std::cout << "допущенно:" << parsed_count <<" " << "Скип:" << skipped_count;
+		file.close();
+	}
+}
+
 void write_diary() {
 	std::ofstream file("diary.txt", std::ios::app); // открывает файл в формате дозаписи
 	file << name_user;
@@ -85,7 +121,7 @@ void searh_item() {
 
 
 void menu_entry() {
-	printf("\nВыберите команду(0-8):\n");
+	printf("\nВыберите команду(0-9):\n");
 	printf("0 - выйти из игры\n");
 	printf("1 - посмотреть время\n");
 	printf("2 - поработать n часов\n");
@@ -95,6 +131,7 @@ void menu_entry() {
 	printf("6 - кол-во уникальных предметов\n");
 	printf("7 - найти предмет\n");
 	printf("8 - записать в дневник\n");
+	printf("9 - парсинг\n");
 }
 
 void finish_game() {
@@ -226,7 +263,7 @@ int main() {
 	while (is_game) {
 		menu_entry();
 		std::map<int, void(*)()> actions = {
-			{0, finish_game}, {1, show_time}, {2, work}, {3, show_inventory}, {4, change_item}, {5, clear_cell}, {6, search_unique_items}, {7, searh_item}, {8, write_diary}
+			{0, finish_game}, {1, show_time}, {2, work}, {3, show_inventory}, {4, change_item}, {5, clear_cell}, {6, search_unique_items}, {7, searh_item}, {8, write_diary}, {9, parser}
 		};
 		int menu_operation;
 		int input_result = scanf_s("%d", &menu_operation);
