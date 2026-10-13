@@ -25,3 +25,5 @@ Release/
 *.vcxproj.filters
 *.vcxproj.user
 items.txt
+diary.txt
+input.txt

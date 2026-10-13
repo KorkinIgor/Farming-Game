@@ -18,6 +18,12 @@ const char* item_names_defualt[] = { "пусто", "дерево", "камень
 char index_item_array[10][64];
 char name_user[33];
 
+
+void cell_cleaning() {
+	printf("Введите корректное значение \n");
+	while (getchar() != '\n');
+}
+
 void record_file() {
 	std::ifstream file("items.txt");
 	if (!file.is_open()) {
@@ -34,11 +40,8 @@ void record_file() {
 		std::istringstream iss(line);
 		int id;
 		std::string name;
-
-		// Парсим строку "0 Пусто" → id = 0, name = "Пусто"
 		if (iss >> id >> name) {
-			if (id >= 0 && id < 10) {
-				// Копируем name (std::string) в char-массив
+			if (id >= 0 and id < 10) {
 				strncpy(index_item_array[id], name.c_str(), 63);
 				index_item_array[id][63] = '\0';
 				++loaded;
@@ -47,8 +50,42 @@ void record_file() {
 	}
 	file.close();
 }
+
+void write_diary() {
+	std::ofstream file("diary.txt", std::ios::app); // открывает файл в формате дозаписи
+	file << name_user;
+	file << "День" << " " << current_day << " " << "Часы" << current_hour << "\n";
+	for (int index_inventory = 0; index_inventory < 10; index_inventory++) {
+		file << "Cлот" << index_inventory << " " << index_item_array[inventory[index_inventory]] << "\n";
+	}
+	file.close();
+}
+
+void searh_item() {
+	while (getchar() != '\n');
+	char name_item[33];
+	printf("Введите название предмета \n");
+	fgets(name_item, sizeof(name_item), stdin);
+	size_t len_name_item = strlen(name_item);
+	if (len_name_item > 0 and name_item[len_name_item - 1] == '\n') {
+		name_item[len_name_item - 1] = '\0';
+	}
+	int repeats_item = 0;
+	for (int index_inventory = 0; index_inventory < 10; index_inventory++) {
+		if (strcmp(name_item, index_item_array[inventory[index_inventory]]) == 0){
+			repeats_item++;
+			printf("слот: %d \n", index_inventory);
+		}
+	}
+	if (repeats_item == 0) {
+		printf("Такого предмета нет \n");
+	}
+	
+}
+
+
 void menu_entry() {
-	printf("\nВыберите команду(0-6):\n");
+	printf("\nВыберите команду(0-8):\n");
 	printf("0 - выйти из игры\n");
 	printf("1 - посмотреть время\n");
 	printf("2 - поработать n часов\n");
@@ -56,11 +93,8 @@ void menu_entry() {
 	printf("4 - заменить предмет\n");
 	printf("5 - выбросить предмет\n");
 	printf("6 - кол-во уникальных предметов\n");
-}
-
-void cell_cleaning() {
-	printf("Введите корректное значение \n");
-	while (getchar() != '\n');
+	printf("7 - найти предмет\n");
+	printf("8 - записать в дневник\n");
 }
 
 void finish_game() {
@@ -173,7 +207,7 @@ void inputFarmerName() {
 	printf("Укажите имя вашего фермера \n");
 	fgets(name_user, sizeof(name_user), stdin);
 	size_t size_name = strlen(name_user);
-	if (size_name > 0 and name_user[size_name - 1] == '\n'){
+	if (size_name > 0 and name_user[size_name - 1] == '\n') {
 		printf("Привет! %s", name_user);
 	}
 	else {
@@ -181,7 +215,6 @@ void inputFarmerName() {
 		cell_cleaning();
 		inputFarmerName();
 	}
-
 }
 
 int main() {
@@ -190,13 +223,10 @@ int main() {
 	SetConsoleOutputCP(1251);
 	record_file();
 	inputFarmerName();
-	for (int i = 0; i < 10; ++i) {
-		printf("%s \n", index_item_array[i]);
-	}
 	while (is_game) {
 		menu_entry();
 		std::map<int, void(*)()> actions = {
-			{0, finish_game}, {1, show_time}, {2, work}, {3, show_inventory}, {4, change_item}, {5, clear_cell}, {6, search_unique_items}
+			{0, finish_game}, {1, show_time}, {2, work}, {3, show_inventory}, {4, change_item}, {5, clear_cell}, {6, search_unique_items}, {7, searh_item}, {8, write_diary}
 		};
 		int menu_operation;
 		int input_result = scanf_s("%d", &menu_operation);
