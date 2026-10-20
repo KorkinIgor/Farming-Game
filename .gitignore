@@ -24,7 +24,4 @@ Release/
 *.vcxproj
 *.vcxproj.filters
 *.vcxproj.user
-items.txt
-diary.txt
-input.txt
-output.txt
+

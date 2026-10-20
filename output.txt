@@ -1,0 +1,2 @@
+difficulty:hard
+rain_chance:40
