@@ -92,7 +92,7 @@ void parser() {
 }
 
 void write_diary() {
-	std::ofstream file("diary.txt", std::ios::app); // открывает файл в формате дозаписи
+	ofstream file("diary.txt", ios::app); // открывает файл в формате дозаписи
 	file << name_user;
 	file << "День" << " " << current_day << " " << "Часы" << current_hour << "\n";
 	for (int index_inventory = 0; index_inventory < 10; index_inventory++) {
@@ -123,8 +123,13 @@ void searh_item() {
 	}
 	
 }
-
-
+void move_menu() {
+	printf("W - вверх \n");
+	printf("S - вниз \n");
+	printf("A - влево \n");
+	printf("D - направо \n");
+	printf("Q - домой \n");
+}
 void menu_entry() {
 	printf("\nВыберите команду(0-9):\n");
 	printf("0 - выйти из игры\n");
@@ -261,15 +266,15 @@ void inputFarmerName() {
 void show_map(char** map, int rows, int cols) {
 	for (int i = 0; i < rows; ++i) {
 		for (int j = 0; j < cols; ++j) {
-			std::cout << map[i][j] << " ";
+			cout << map[i][j] << " ";
 		}
-		std::cout << "\n";
+		cout << "\n";
 	}
 }
 void trip_character() {
 	int rows = rand() % 30 + 5;
 	int cols = rand() % 30 + 5;
-
+	printf("%d %d \n", rows, cols);
 	char** map = new char*[rows];          // Выделение памяти
 
 	for (int i = 0; i < rows; ++i) {
@@ -288,10 +293,49 @@ void trip_character() {
 			} 
 		}
 	}
-	int pos_x = rand() % (rows-2) + 1;
-	int pos_y = rand() % (cols - 2) + 1;
-	map[pos_x][pos_y] = '@';
+	int pos_x = rand() % (cols -2) + 1;
+	int pos_y = rand() % (rows - 2) + 1;
+	map[pos_y][pos_x] = '@';
+	printf("%d %d \n", pos_y, pos_x);
+	char last_char = '.';
 	show_map(map, rows, cols);
+	move_menu();
+	while (true) {
+		char move_step;
+		cout << "Ходите: ";
+		cin >> move_step;
+		if (cin.peek() != '\n' and cin.peek() != EOF) {
+			cell_cleaning();
+		}
+		else {
+			if (move_step == 'A' and (map[pos_y][pos_x - 1] == '.' or map[pos_y][pos_x - 1] == ',')) {
+				map[pos_y][pos_x] = last_char;
+				last_char = map[pos_y][pos_x - 1];
+				map[pos_y][pos_x - 1] = '@';
+				pos_x--;
+			}
+			if (move_step == 'W' and (map[pos_y - 1][pos_x] == '.' or map[pos_y - 1][pos_x] == ',')) {
+				map[pos_y][pos_x] = last_char;
+				last_char = map[pos_y - 1][pos_x];
+				map[pos_y - 1][pos_x] = '@';
+				pos_y--;
+			}
+			if (move_step == 'S' and (map[pos_y + 1][pos_x] == '.' or map[pos_y + 1][pos_x] == ',')) {
+				map[pos_y][pos_x] = last_char;
+				last_char = map[pos_y + 1][pos_x];
+				map[pos_y + 1][pos_x] = '@';
+				pos_y++;
+			}
+			if (move_step == 'D' and (map[pos_y][pos_x + 1] == '.' or map[pos_y][pos_x+1] == ',')) {
+				map[pos_y][pos_x] = last_char;
+				last_char = map[pos_y][pos_x + 1];
+				map[pos_y][pos_x + 1] = '@';
+				pos_x++;
+			}
+		}
+		show_map(map, rows, cols);
+	}
+
 	delete[] map;                   // ОБЯЗАТЕЛЬНО освободить!
 	map = nullptr;
 }
