@@ -9,6 +9,9 @@
 #include <cstring>
 #include <cstdio>    
 #include <sstream>    
+#include <cstdlib>
+#include <ctime>
+using namespace std;
 
 int is_game = 1;
 int current_day = 1;
@@ -34,10 +37,10 @@ void record_file() {
 			index_item_array[i][63] = '\0';
 		}
 	}
-	std::string line;
+	string line;
 	int loaded = 0;
-	while (std::getline(file, line)) {
-		std::istringstream iss(line);
+	while (getline(file, line)) {
+		istringstream iss(line);
 		int id;
 		std::string name;
 		if (iss >> id >> name) {
@@ -52,12 +55,12 @@ void record_file() {
 }
 
 void parser() {
-	std::ifstream file("input.txt");
+	ifstream file("input.txt");
 	if (!file.is_open()) {
 		printf("не удалось открыть файл \n");
 	}
 	else {
-		std::string line;
+		string line;
 		int parsed_count = 0;
 		int skipped_count = 0;
 		while (std::getline(file, line)) {
@@ -66,6 +69,7 @@ void parser() {
 				continue;
 			}
 			size_t separator = line.find('=');
+			
 			if (separator == std::string::npos) {
 				skipped_count++;
 				continue;
@@ -76,9 +80,9 @@ void parser() {
 				skipped_count++;
 				continue;
 			}
-			std::cout << "" << key << ":" << value << "\n";
+			std::cout << "" << key << "=" << value << "\n";
 			std::ofstream file("output.txt", std::ios::app);
-			file << "" << key << ":" << value << "\n";
+			file << "" << key << "=" << value << "\n";
 			file.close();
 			parsed_count++;
 		}
@@ -94,6 +98,7 @@ void write_diary() {
 	for (int index_inventory = 0; index_inventory < 10; index_inventory++) {
 		file << "Cлот" << index_inventory << " " << index_item_array[inventory[index_inventory]] << "\n";
 	}
+	printf("Записал!");
 	file.close();
 }
 
@@ -245,7 +250,7 @@ void inputFarmerName() {
 	fgets(name_user, sizeof(name_user), stdin);
 	size_t size_name = strlen(name_user);
 	if (size_name > 0 and name_user[size_name - 1] == '\n') {
-		printf("Привет! %s", name_user);
+		printf("привет! %s", name_user);
 	}
 	else {
 		printf("Вы указали неправильное имя фермера \n");
@@ -253,8 +258,46 @@ void inputFarmerName() {
 		inputFarmerName();
 	}
 }
+void show_map(char** map, int rows, int cols) {
+	for (int i = 0; i < rows; ++i) {
+		for (int j = 0; j < cols; ++j) {
+			std::cout << map[i][j] << " ";
+		}
+		std::cout << "\n";
+	}
+}
+void trip_character() {
+	int rows = rand() % 30 + 5;
+	int cols = rand() % 30 + 5;
+
+	char** map = new char*[rows];          // Выделение памяти
+
+	for (int i = 0; i < rows; ++i) {
+		map[i] = new char[cols];
+	}
+	for (int i = 0; i < rows; ++i) {  
+		for (int j = 0; j < cols; ++j) {  
+			if (i == 0 or i == rows - 1 or j == 0 or j == cols - 1) { map[i][j] = '#';}
+			else {
+				int probability_let = rand() % 101;
+				if (probability_let > 20){ map[i][j] = '.';}
+				else {
+					if (probability_let < 11){ map[i][j] = 'T';}
+					else{ map[i][j] = 'R';}
+				}
+			} 
+		}
+	}
+	int pos_x = rand() % (rows-2) + 1;
+	int pos_y = rand() % (cols - 2) + 1;
+	map[pos_x][pos_y] = '@';
+	show_map(map, rows, cols);
+	delete[] map;                   // ОБЯЗАТЕЛЬНО освободить!
+	map = nullptr;
+}
 
 int main() {
+	std::srand(std::time(nullptr));
 	setlocale(LC_ALL, "Russian");
 	SetConsoleCP(1251);
 	SetConsoleOutputCP(1251);
@@ -263,7 +306,7 @@ int main() {
 	while (is_game) {
 		menu_entry();
 		std::map<int, void(*)()> actions = {
-			{0, finish_game}, {1, show_time}, {2, work}, {3, show_inventory}, {4, change_item}, {5, clear_cell}, {6, search_unique_items}, {7, searh_item}, {8, write_diary}, {9, parser}
+			{0, finish_game}, {1, show_time}, {2, work}, {3, show_inventory}, {4, change_item}, {5, clear_cell}, {6, search_unique_items}, {7, searh_item}, {8, write_diary}, {9, parser}, {10, trip_character}
 		};
 		int menu_operation;
 		int input_result = scanf_s("%d", &menu_operation);
