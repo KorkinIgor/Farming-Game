@@ -1,2 +1,2 @@
-difficulty:hard
-rain_chance:40
+difficulty=hard
+rain_chance=40
