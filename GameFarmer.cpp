@@ -271,10 +271,17 @@ void show_map(char** map, int rows, int cols) {
 		cout << "\n";
 	}
 }
+
+bool checking_next_cell(char** map, int pos_y, int pos_x) {
+	if (map[pos_y][pos_x] == '.' or map[pos_y][pos_x] == ',' or map[pos_y][pos_x] == 'D' or map[pos_y][pos_x] == 'U') {
+		return false;
+	}
+
+}
+
 void trip_character() {
 	int rows = rand() % 30 + 5;
 	int cols = rand() % 30 + 5;
-	printf("%d %d \n", rows, cols);
 	char** map = new char*[rows];          // Выделение памяти
 
 	for (int i = 0; i < rows; ++i) {
@@ -285,7 +292,9 @@ void trip_character() {
 			if (i == 0 or i == rows - 1 or j == 0 or j == cols - 1) { map[i][j] = '#';}
 			else {
 				int probability_let = rand() % 101;
-				if (probability_let > 20){ map[i][j] = '.';}
+				if (probability_let > 20){ 
+					map[i][j] = '.';
+				}
 				else {
 					if (probability_let < 11){ map[i][j] = 'T';}
 					else{ map[i][j] = 'R';}
@@ -295,8 +304,21 @@ void trip_character() {
 	}
 	int pos_x = rand() % (cols -2) + 1;
 	int pos_y = rand() % (rows - 2) + 1;
+	int d_pos_x = rand() % (cols - 2) + 1;
+	int d_pos_y = rand() % (rows - 2) + 1;
 	map[pos_y][pos_x] = '@';
-	printf("%d %d \n", pos_y, pos_x);
+	while (d_pos_y == pos_y and d_pos_x == pos_y) {
+		int d_pos_x = rand() % (cols - 2) + 1;
+		int d_pos_y = rand() % (rows - 2) + 1;
+	}
+	map[d_pos_y][d_pos_x] = 'D';
+	int u_pos_x = rand() % (cols - 2) + 1;
+	int u_pos_y = rand() % (rows - 2) + 1;
+	while (map[u_pos_y][u_pos_x] == 'D' or map[u_pos_y][u_pos_x] == '@') {
+		int u_pos_x = rand() % (cols - 2) + 1;
+		int u_pos_y = rand() % (rows - 2) + 1;
+	}
+	map[u_pos_y][u_pos_x] = 'U';
 	char last_char = '.';
 	show_map(map, rows, cols);
 	move_menu();
@@ -308,40 +330,46 @@ void trip_character() {
 			cell_cleaning();
 		}
 		else {
-			if (move_step == 'A' and (map[pos_y][pos_x - 1] == '.' or map[pos_y][pos_x - 1] == ',')) {
+			if (move_step == 'A' and checking_next_cell(map, pos_y, pos_x - 1)== false) {
 				map[pos_y][pos_x] = last_char;
 				last_char = map[pos_y][pos_x - 1];
 				map[pos_y][pos_x - 1] = '@';
 				pos_x--;
 			}
-			if (move_step == 'W' and (map[pos_y - 1][pos_x] == '.' or map[pos_y - 1][pos_x] == ',')) {
+			if (move_step == 'W' and checking_next_cell(map, pos_y - 1, pos_x) == false) {
 				map[pos_y][pos_x] = last_char;
 				last_char = map[pos_y - 1][pos_x];
 				map[pos_y - 1][pos_x] = '@';
 				pos_y--;
 			}
-			if (move_step == 'S' and (map[pos_y + 1][pos_x] == '.' or map[pos_y + 1][pos_x] == ',')) {
+			if (move_step == 'S' and checking_next_cell(map, pos_y + 1, pos_x) == false) {
 				map[pos_y][pos_x] = last_char;
 				last_char = map[pos_y + 1][pos_x];
 				map[pos_y + 1][pos_x] = '@';
 				pos_y++;
 			}
-			if (move_step == 'D' and (map[pos_y][pos_x + 1] == '.' or map[pos_y][pos_x+1] == ',')) {
+			if (move_step == 'D' and checking_next_cell(map, pos_y, pos_x + 1) == false) {
 				map[pos_y][pos_x] = last_char;
 				last_char = map[pos_y][pos_x + 1];
 				map[pos_y][pos_x + 1] = '@';
 				pos_x++;
 			}
+			if (move_step == 'Q' and last_char == 'U') {
+				break;
+			}
+		}
+		if (last_char == 'D') {
+			break;
 		}
 		show_map(map, rows, cols);
 	}
-
 	delete[] map;                   // ОБЯЗАТЕЛЬНО освободить!
 	map = nullptr;
+	if (last_char == 'D') { trip_character(); }
 }
 
 int main() {
-	std::srand(std::time(nullptr));
+	srand(std::time(nullptr));
 	setlocale(LC_ALL, "Russian");
 	SetConsoleCP(1251);
 	SetConsoleOutputCP(1251);
