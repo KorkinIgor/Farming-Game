@@ -11,6 +11,8 @@
 #include <sstream>    
 #include <cstdlib>
 #include <ctime>
+#include <vector>
+#include <utility>
 using namespace std;
 
 int is_game = 1;
@@ -20,7 +22,7 @@ int inventory[10] = { 1, 2, 2, 2, 3, 3, 4, 6, 0, 0 };
 const char* item_names_defualt[] = { "пусто", "дерево", "камень", "семена", "ножницы", "сено", "мотыга", "золото", "железо", "навоз" };
 char index_item_array[10][64];
 char name_user[33];
-
+bool is_fall = false;
 
 void cell_cleaning() {
 	printf("Введите корректное значение \n");
@@ -142,6 +144,7 @@ void menu_entry() {
 	printf("7 - найти предмет\n");
 	printf("8 - записать в дневник\n");
 	printf("9 - парсинг\n");
+	printf("10 - отправиться в приключение\n");
 }
 
 void finish_game() {
@@ -280,9 +283,11 @@ bool checking_next_cell(char** map, int pos_y, int pos_x) {
 }
 
 void trip_character() {
+	
 	int rows = rand() % 30 + 5;
 	int cols = rand() % 30 + 5;
-	char** map = new char*[rows];          // Выделение памяти
+	char** map = new char*[rows];// Выделение памяти
+	vector<pair<int, int>> fragile_floor;
 
 	for (int i = 0; i < rows; ++i) {
 		map[i] = new char[cols];
@@ -293,6 +298,10 @@ void trip_character() {
 			else {
 				int probability_let = rand() % 101;
 				if (probability_let > 20){ 
+					int probability_fragile_floor = rand() % 101;
+					if (probability_fragile_floor < 11){
+						fragile_floor.push_back({i , j});
+					}
 					map[i][j] = '.';
 				}
 				else {
@@ -312,13 +321,15 @@ void trip_character() {
 		int d_pos_y = rand() % (rows - 2) + 1;
 	}
 	map[d_pos_y][d_pos_x] = 'D';
-	int u_pos_x = rand() % (cols - 2) + 1;
-	int u_pos_y = rand() % (rows - 2) + 1;
-	while (map[u_pos_y][u_pos_x] == 'D' or map[u_pos_y][u_pos_x] == '@') {
+	if (is_fall == false) {
 		int u_pos_x = rand() % (cols - 2) + 1;
 		int u_pos_y = rand() % (rows - 2) + 1;
+		while (map[u_pos_y][u_pos_x] == 'D' or map[u_pos_y][u_pos_x] == '@') {
+			int u_pos_x = rand() % (cols - 2) + 1;
+			int u_pos_y = rand() % (rows - 2) + 1;
+		}
+		map[u_pos_y][u_pos_x] = 'U';
 	}
-	map[u_pos_y][u_pos_x] = 'U';
 	char last_char = '.';
 	show_map(map, rows, cols);
 	move_menu();
@@ -358,14 +369,32 @@ void trip_character() {
 				break;
 			}
 		}
+		if (last_char == ',') {
+			int probability_fall = rand() % 101;
+			if (probability_fall < 51) {
+				cout << "Пол скрипит! \n";
+			}
+			else {
+				is_fall = true;
+				break;
+			}
+		}
+		if (last_char == '.') {
+			for (const auto& [a, b] : fragile_floor) {
+				if (map[a][b] == '@') {
+					cout << "Осторожно, скрипучий пол! \n";
+					last_char = ',';
+				}
+			}
+		}
 		if (last_char == 'D') {
 			break;
 		}
 		show_map(map, rows, cols);
 	}
-	delete[] map;                   // ОБЯЗАТЕЛЬНО освободить!
+	delete[] map;
 	map = nullptr;
-	if (last_char == 'D') { trip_character(); }
+	if (last_char == 'D' or is_fall) { trip_character(); }
 }
 
 int main() {
