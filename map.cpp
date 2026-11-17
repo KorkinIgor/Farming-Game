@@ -8,95 +8,93 @@
 
 using namespace std;
 
-// Константы для карты
-const int MAP_MIN_SIZE = 5;
-const int MAP_MAX_SIZE = 30;
-const int CHANCE_EMPTY = 20;
-const int CHANCE_FRAGILE = 11;
-const int CHANCE_TREE = 11;
-
 void move_menu() {
-    printf("W - вверх \nS - вниз \nA - влево \nD - направо \nQ - домой \n");
+    printf("\nW - вверх | S - вниз | A - влево | D - направо | Q - выйти (если стоите на U)\n");
 }
 
-void show_map(const MapData* map) {
-    for (int i = 0; i < map->rows; ++i) {
-        for (int j = 0; j < map->cols; ++j) {
+void show_map(const Map* map) {
+    for (int i = 0; i < map->height; ++i) {
+        for (int j = 0; j < map->width; ++j) {
             cout << map->grid[i][j] << " ";
         }
         cout << "\n";
     }
 }
 
-bool checking_next_cell(const MapData* map, int pos_y, int pos_x) {
-    // Проверка на выход за границы
-    if (pos_y < 0 || pos_y >= map->rows || pos_x < 0 || pos_x >= map->cols) return true;
+bool checking_next_cell(const Map* map, int pos_y, int pos_x) {
+    if (pos_y < 0 || pos_y >= map->height || pos_x < 0 || pos_x >= map->width) return true;
 
-    if (map->grid[pos_y][pos_x] == '.' || map->grid[pos_y][pos_x] == ',' || map->grid[pos_y][pos_x] == 'D' || map->grid[pos_y][pos_x] == 'U') {
-        return false;
+    char cell = map->grid[pos_y][pos_x];
+    if (cell == CELL_EMPTY || cell == CELL_FRAGILE || cell == CELL_DOOR || cell == CELL_EXIT) {
+        return false; // Можно ходить
     }
-    return true; // Стена или дерево
+    return true; // Стены и деревья
 }
 
-void trip_character(GameState* game) {
-    bool is_fall = false; // Локальная переменная вместо глобальной
+void trip_character(Player* player) {
     bool in_trip = true;
+    bool is_fall = false;
 
     while (in_trip) {
-        MapData map;
-        map.rows = rand() % MAP_MAX_SIZE + MAP_MIN_SIZE;
-        map.cols = rand() % MAP_MAX_SIZE + MAP_MIN_SIZE;
+        // ВЫДЕЛЕНИЕ ПАМЯТИ ПОД СТРУКТУРУ КАРТЫ
+        Map* map = (Map*)malloc(sizeof(Map));
+        map->height = rand() % MAP_MAX_SIZE + MAP_MIN_SIZE;
+        map->width = rand() % MAP_MAX_SIZE + MAP_MIN_SIZE;
+        map->floor_count = 1;
 
-        // Выделение памяти (malloc)
-        map.grid = (char**)malloc(map.rows * sizeof(char*));
-        map.fragile_floor = (bool**)malloc(map.rows * sizeof(bool*));
+        // Выделение памяти под сетку
+        map->grid = (char**)malloc(map->height * sizeof(char*));
+        map->fragile_floor = (bool**)malloc(map->height * sizeof(bool*));
 
-        for (int i = 0; i < map.rows; ++i) {
-            map.grid[i] = (char*)malloc(map.cols * sizeof(char));
-            map.fragile_floor[i] = (bool*)malloc(map.cols * sizeof(bool));
-            for (int j = 0; j < map.cols; j++) map.fragile_floor[i][j] = false;
+        for (int i = 0; i < map->height; ++i) {
+            map->grid[i] = (char*)malloc(map->width * sizeof(char));
+            map->fragile_floor[i] = (bool*)malloc(map->width * sizeof(bool));
+            for (int j = 0; j < map->width; j++) map->fragile_floor[i][j] = false;
         }
 
-        for (int i = 0; i < map.rows; ++i) {
-            for (int j = 0; j < map.cols; ++j) {
-                if (i == 0 || i == map.rows - 1 || j == 0 || j == map.cols - 1) {
-                    map.grid[i][j] = '#';
+        // Заполнение карты
+        for (int i = 0; i < map->height; ++i) {
+            for (int j = 0; j < map->width; ++j) {
+                if (i == 0 || i == map->height - 1 || j == 0 || j == map->width - 1) {
+                    map->grid[i][j] = CELL_WALL;
                 }
                 else {
                     int prob = rand() % 101;
-                    if (prob > CHANCE_EMPTY) {
-                        if (rand() % 101 < CHANCE_FRAGILE) map.fragile_floor[i][j] = true;
-                        map.grid[i][j] = '.';
+                    if (prob > 20) {
+                        if (rand() % 101 < 11) map->fragile_floor[i][j] = true;
+                        map->grid[i][j] = CELL_EMPTY;
                     }
                     else {
-                        map.grid[i][j] = (prob < CHANCE_TREE) ? 'T' : 'R';
+                        map->grid[i][j] = (prob < 11) ? CELL_TREE : CELL_ROCK;
                     }
                 }
             }
         }
 
-        int pos_x = rand() % (map.cols - 2) + 1;
-        int pos_y = rand() % (map.rows - 2) + 1;
-        int d_pos_x, d_pos_y, u_pos_x, u_pos_y;
+        // Установка игрока (координаты берем из структуры Player)
+        player->x = rand() % (map->width - 2) + 1;
+        player->y = rand() % (map->height - 2) + 1;
+        map->grid[player->y][player->x] = CELL_PLAYER;
 
-        map.grid[pos_y][pos_x] = '@';
-
+        // Установка двери и выхода
+        int d_x, d_y;
         do {
-            d_pos_x = rand() % (map.cols - 2) + 1;
-            d_pos_y = rand() % (map.rows - 2) + 1;
-        } while (d_pos_y == pos_y && d_pos_x == pos_x);
-        map.grid[d_pos_y][d_pos_x] = 'D';
+            d_x = rand() % (map->width - 2) + 1;
+            d_y = rand() % (map->height - 2) + 1;
+        } while (d_y == player->y && d_x == player->x);
+        map->grid[d_y][d_x] = CELL_DOOR;
 
         if (!is_fall) {
+            int u_x, u_y;
             do {
-                u_pos_x = rand() % (map.cols - 2) + 1;
-                u_pos_y = rand() % (map.rows - 2) + 1;
-            } while (map.grid[u_pos_y][u_pos_x] == 'D' || map.grid[u_pos_y][u_pos_x] == '@');
-            map.grid[u_pos_y][u_pos_x] = 'U';
+                u_x = rand() % (map->width - 2) + 1;
+                u_y = rand() % (map->height - 2) + 1;
+            } while (map->grid[u_y][u_x] == CELL_DOOR || map->grid[u_y][u_x] == CELL_PLAYER);
+            map->grid[u_y][u_x] = CELL_EXIT;
         }
 
-        char last_char = '.';
-        show_map(&map);
+        char last_char = CELL_EMPTY;
+        show_map(map);
         move_menu();
 
         bool end_sub_trip = false;
@@ -104,50 +102,58 @@ void trip_character(GameState* game) {
             char move_step;
             cout << "Ходите: ";
             cin >> move_step;
+
             if (cin.peek() != '\n' && cin.peek() != EOF) {
                 cell_cleaning();
             }
             else {
-                if (move_step == 'A' && !checking_next_cell(&map, pos_y, pos_x - 1)) {
-                    map.grid[pos_y][pos_x] = last_char; last_char = map.grid[pos_y][pos_x - 1]; map.grid[pos_y][pos_x - 1] = '@'; pos_x--;
+                int next_x = player->x;
+                int next_y = player->y;
+
+                if (move_step == 'A') next_x--;
+                else if (move_step == 'W') next_y--;
+                else if (move_step == 'S') next_y++;
+                else if (move_step == 'D') next_x++;
+                else if (move_step == 'Q' && last_char == CELL_EXIT) {
+                    end_sub_trip = true;
+                    in_trip = false;
+                    printf("Вы успешно покинули локацию! Пройдено этажей: %d\n", map->floor_count);
                 }
-                if (move_step == 'W' && !checking_next_cell(&map, pos_y - 1, pos_x)) {
-                    map.grid[pos_y][pos_x] = last_char; last_char = map.grid[pos_y - 1][pos_x]; map.grid[pos_y - 1][pos_x] = '@'; pos_y--;
-                }
-                if (move_step == 'S' && !checking_next_cell(&map, pos_y + 1, pos_x)) {
-                    map.grid[pos_y][pos_x] = last_char; last_char = map.grid[pos_y + 1][pos_x]; map.grid[pos_y + 1][pos_x] = '@'; pos_y++;
-                }
-                if (move_step == 'D' && !checking_next_cell(&map, pos_y, pos_x + 1)) {
-                    map.grid[pos_y][pos_x] = last_char; last_char = map.grid[pos_y][pos_x + 1]; map.grid[pos_y][pos_x + 1] = '@'; pos_x++;
-                }
-                if (move_step == 'Q' && last_char == 'U') {
-                    end_sub_trip = true; in_trip = false;
+
+                if (!checking_next_cell(map, next_y, next_x)) {
+                    map->grid[player->y][player->x] = last_char;
+                    last_char = map->grid[next_y][next_x];
+                    map->grid[next_y][next_x] = CELL_PLAYER;
+                    player->x = next_x;
+                    player->y = next_y;
                 }
             }
 
-            if (last_char == ',') {
-                if (rand() % 101 < 51) cout << "Пол скрипит! \n";
+            if (last_char == CELL_FRAGILE) {
+                if (rand() % 101 < 51) cout << "Пол скрипит...\n";
                 else { is_fall = true; end_sub_trip = true; in_trip = true; }
             }
-            if (last_char == '.' && map.fragile_floor[pos_y][pos_x]) {
-                cout << "Осторожно, скрипучий пол! \n"; last_char = ',';
+            if (last_char == CELL_EMPTY && map->fragile_floor[player->y][player->x]) {
+                cout << "Осторожно, скрипучий пол!\n";
+                last_char = CELL_FRAGILE;
             }
-            if (last_char == 'D') {
-                is_fall = false; end_sub_trip = true; in_trip = true; // Пересоздаем карту
+            if (last_char == CELL_DOOR) {
+                is_fall = false;
+                end_sub_trip = true;
+                in_trip = true; // Пересоздаем карту (спускаемся на новый этаж)
+                map->floor_count++;
             }
-            if (!end_sub_trip) show_map(&map);
+            if (!end_sub_trip) show_map(map);
         }
 
-        // ОСВОБОЖДЕНИЕ ПАМЯТИ КАРТЫ
-        printf("Память структуры карты по адресу %p освобождена\n", (void*)map.grid);
-        for (int i = 0; i < map.rows; ++i) {
-            free(map.grid[i]);
-            free(map.fragile_floor[i]);
+        // ОСВОБОЖДЕНИЕ ПАМЯТИ КАРТЫ (требование задания)
+        printf("Память структуры карты по адресу %p освобождена\n", (void*)map);
+        for (int i = 0; i < map->height; ++i) {
+            free(map->grid[i]);
+            free(map->fragile_floor[i]);
         }
-        free(map.grid);
-        free(map.fragile_floor);
-
-        if (is_fall) in_trip = true; // Упали - генерируем заново
-        else in_trip = false; // Вышли через U
+        free(map->grid);
+        free(map->fragile_floor);
+        free(map); // Удаляем саму структуру
     }
 }

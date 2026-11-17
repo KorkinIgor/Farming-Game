@@ -9,14 +9,14 @@
 using namespace std;
 
 void cell_cleaning() {
-	printf("Введите корректное значение \n");
+	printf("Некорректный ввод. Нажмите Enter для продолжения...\n");
 	while (getchar() != '\n');
 }
 
 void parser() {
 	ifstream file("input.txt");
 	if (!file.is_open()) {
-		printf("не удалось открыть файл \n");
+		printf("Не удалось открыть файл input.txt\n");
 	}
 	else {
 		string line;
@@ -36,7 +36,7 @@ void parser() {
 			out_file.close();
 			parsed_count++;
 		}
-		std::cout << "допущенно:" << parsed_count << " Скип:" << skipped_count << "\n";
+		std::cout << "Обработано строк: " << parsed_count << " | Пропущено: " << skipped_count << "\n";
 		file.close();
 	}
 }
