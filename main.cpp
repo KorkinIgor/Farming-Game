@@ -9,14 +9,15 @@
 #include "map.h"
 #include "utils.h"
 
+
 using namespace std;
 
 void menu_entry() {
 	printf("\nВыберите команду:\n");
 	printf("%d - выйти из игры\n", 0);
 	printf("%d - создать/пересоздать персонажа\n", 1);
-	printf("%d - поработать n часов\n", 2);
-	printf("%d - посмотреть инвентарь\n", 3);
+	printf("%d - показать карточку игрока\n", 2);
+	printf("%d - времечко\n", 3);
 	printf("%d - заменить предмет\n", 4);
 	printf("%d - выбросить предмет\n", 5);
 	printf("%d - кол-во уникальных предметов\n", 6);
@@ -64,8 +65,8 @@ int main() {
 		}
 
 		std::map<int, void(*)(Player*)> actions = {
-			{ 2, work },
-			{ 3, show_inventory },
+			{ 2, show_character_card },
+			{ 3, time_management },
 			{ 4, change_item },
 			{ 5, clear_cell },
 			{ 6, search_unique_items },

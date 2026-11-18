@@ -6,6 +6,7 @@
 #include <cstring>
 #include <sstream>
 #include <cstdio>
+#include <ctime>
 
 using namespace std;
 
@@ -100,9 +101,6 @@ void search_item(Player* player) {
     if (repeats == 0) printf("Такого предмета нет.\n");
 }
 
-void show_time(Player* player) {
-    printf("Текущее время -> День: %d, Время: %d:00\n", player->current_day, player->current_hour);
-}
 
 void work(Player* player) {
     printf("Сколько часов вы хотите поработать?: ");
@@ -120,12 +118,103 @@ void work(Player* player) {
     }
 }
 
-void show_inventory(Player* player) {
+void show_character_card(Player* player) {
+    time_t now = time(0);
+    tm* localTime = localtime(&now);
+    std::cout << player->name << "\n";
     printf("--- Инвентарь ---\n");
     for (int i = 0; i < MAX_INVENTORY; i++) {
         printf("Слот %d: %s\n", i, player->index_item_array[player->inventory[i]]);
     }
-    printf("-----------------\n");
+    printf("%02d.%02d.%d\n", localTime->tm_mday, localTime->tm_mon + 1, localTime->tm_year + 1900);
+    printf("%02d:%02d:%02d\n", localTime->tm_hour, localTime->tm_min, localTime->tm_sec);
+}
+void time_management(Player* player) {
+    bool in_time_menu = true;
+
+    while (in_time_menu) {
+        printf("\n--- Управление временем ---\n");
+        printf("1 - Посмотреть на часы\n");
+        printf("2 - Пропустить время (Ждать)\n");
+        printf("3 - Отдых (Лечь спать)\n");
+        printf("0 - Вернуться в главное меню\n");
+        printf("> ");
+
+        int choice;
+        if (scanf_s("%d", &choice) != 1) {
+            cell_cleaning();
+            continue;
+        }
+
+        switch (choice) {
+        case 1: // ПОСМОТРЕТЬ НА ЧАСЫ
+            printf("\nТекущее время -> День: %d, Время: %02d:00\n", player->current_day, player->current_hour);
+            break;
+
+        case 2: { // ПРОПУСТИТЬ ВРЕМЯ (ЖДАТЬ)
+            printf("Сколько часов вы хотите пропустить? (от 1): ");
+            int hours_to_skip;
+
+            if (scanf_s("%d", &hours_to_skip) != 1 || hours_to_skip < 1) {
+                printf("Ошибка: нужно ввести целое число больше 0.\n");
+                cell_cleaning();
+                break;
+            }
+
+            long long total_hours = (long long)player->current_day * HOURS_IN_DAY + player->current_hour;
+
+            // Вычисляем, когда наступит ближайшие 02:00 ночи
+            long long next_2am;
+            if (player->current_hour < 2) {
+                next_2am = (long long)player->current_day * HOURS_IN_DAY + 2;
+            }
+            else {
+                // Если сейчас >= 02:00, то 02:00 наступит на следующий день
+                next_2am = (long long)(player->current_day + 1) * HOURS_IN_DAY + 2;
+            }
+
+            long long target_total_hours = total_hours + hours_to_skip;
+
+            // Проверка: не пересекаем ли мы границу 02:00
+            if (target_total_hours > next_2am) {
+                printf("Нельзя! Ночью фермер должен спать. До 02:00 ночи можно подождать максимум %lld ч.\n", next_2am - total_hours);
+            }
+            else {
+                // Применяем новое время
+                player->current_day = target_total_hours / HOURS_IN_DAY;
+                player->current_hour = target_total_hours % HOURS_IN_DAY;
+                printf("Вы подождали %d ч. Текущее время -> День: %d, Время: %02d:00\n",
+                    hours_to_skip, player->current_day, player->current_hour);
+
+                // Если дошли ровно до 02:00, намекаем, что пора спать
+                if (player->current_hour == 2) {
+                    printf("Уже 2 часа ночи! Пора ложиться спать.\n");
+                }
+            }
+            break;
+        }
+
+        case 3: // ОТДЫХ (ЛЕЧЬ СПАТЬ)
+            player->current_day++;       // Переход на следующий день
+            player->current_hour = 8;    // Время 08:00 утра
+
+            // Восстановление характеристик на 100%
+            player->health = player->max_health;
+            player->stamina = player->max_stamina;
+
+            printf("\nВы отлично выспались! Наступил День: %d, Время: 08:00\n", player->current_day);
+            printf("Здоровье и выносливость полностью восстановлены.\n");
+            break;
+
+        case 0: // ВЫХОД В ГЛАВНОЕ МЕНЮ
+            in_time_menu = false;
+            break;
+
+        default:
+            printf("Такого пункта нет.\n");
+            break;
+        }
+    }
 }
 
 void change_item(Player* player) {
@@ -188,8 +277,8 @@ void search_unique_items(Player* player) {
 void create_or_reset_player(Player** player_ptr) {
     if (*player_ptr != NULL) {
         char confirm;
-        printf("Пересоздать персонажа? (y/n): ", (*player_ptr)->name);
-        scanf_s(" %c", &confirm);
+        printf("Пересоздать персонажа %s? (y/n): ", (*player_ptr)->name); // Добавил %s
+        scanf_s(" %c", &confirm, 1); // Добавил 1 для scanf_s
 
         if (confirm == 'y' || confirm == 'Y') {
             printf("Память структуры игрока по адресу %p освобождена\n", (void*)(*player_ptr));
@@ -199,17 +288,21 @@ void create_or_reset_player(Player** player_ptr) {
         else {
             printf("Создание отменено.\n");
             cell_cleaning();
-            return;
+            return; // Выходим ТОЛЬКО если отменили
         }
     }
-    else {
-        *player_ptr = (Player*)malloc(sizeof(Player));
 
-        init_player(*player_ptr);
-        record_file(*player_ptr);
-        input_player_name(*player_ptr);
+    // А вот здесь БЕЗ else создаем нового персонажа (или после удаления)
+    *player_ptr = (Player*)malloc(sizeof(Player));
 
-        printf("Персонаж успешно создан!\n");
+    if (*player_ptr == NULL) {
+        printf("Ошибка выделения памяти!\n");
+        return;
     }
 
+    init_player(*player_ptr);
+    record_file(*player_ptr);
+    input_player_name(*player_ptr);
+
+    printf("Персонаж успешно создан!\n");
 }
