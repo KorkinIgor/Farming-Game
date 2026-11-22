@@ -23,6 +23,7 @@ struct Map {
     int width;              // cols
     int height;             // rows
     int floor_count;      
+    int floor_reward = 50;
 };
 
 void move_menu();

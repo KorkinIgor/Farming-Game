@@ -9,9 +9,16 @@ const int MAX_NAME_LENGTH = 33;
 const int MAX_ITEMS_COUNT = 10;
 const int MAX_ITEM_NAME = 64;
 const int HOURS_IN_DAY = 24;
+enum Profession {
+    miner = 0,
+    scout = 1,
+    banker = 2
+};
+
 
 struct Player {
     char name[MAX_NAME_LENGTH];
+    Profession profession;
     int current_day;
     int current_hour;
 
@@ -28,9 +35,9 @@ struct Player {
     char index_item_array[MAX_ITEMS_COUNT][MAX_ITEM_NAME];
 
 
+
 };
 
-// ?????????? ???????
 void init_player(Player* player);
 void record_file(Player* player);
 void input_player_name(Player* player);
